@@ -130,6 +130,7 @@ function confirmIdentity() {
 function applyAccessControl() {
   const isRequestor = CURRENT_USER && CURRENT_USER.role === 'requestor';
   const isStore = CURRENT_USER && CURRENT_USER.role === 'store';
+  const isApprover = CURRENT_USER && (CURRENT_USER.role === 'approver' || CURRENT_USER.role === 'superuser');
 
   document.querySelectorAll('nav button').forEach(btn => {
     btn.style.display = ((isRequestor || isStore) && REQUESTOR_RESTRICTED_TABS.includes(btn.dataset.tab)) ? 'none' : '';
@@ -152,9 +153,25 @@ function applyAccessControl() {
     if (isRequestor) {
       rbSel.value = CURRENT_USER.name;
       rbSel.disabled = true;
+    } else if (isApprover) {
+      ensureRequesterOption_(rbSel, CURRENT_USER.name);
+      rbSel.value = CURRENT_USER.name;
+      rbSel.disabled = false; // still free to file on someone else's behalf if needed
     } else {
       rbSel.disabled = false;
     }
+  }
+}
+
+// Approvers aren't in the regular REQ_REQUESTORS list, so their own name
+// may not exist as an option yet — add it if missing.
+function ensureRequesterOption_(selectEl, name) {
+  const exists = Array.from(selectEl.options).some(o => o.value === name);
+  if (!exists) {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name + ' (You)';
+    selectEl.insertBefore(opt, selectEl.options[1] || null);
   }
 }
 
