@@ -64,6 +64,18 @@ tr.clickable{cursor:pointer;}
 #configBanner{background:#fdecea;color:var(--red);padding:10px 20px;font-size:13px;display:none;}
 #configBanner a{color:var(--red);font-weight:600;}
 
+/* Store Action box — nested inside an Approved requisition's detail panel.
+   Distinct from .detail-panel (which is just a top-border divider) so it
+   reads as an actionable card, not another passive info section. */
+.store-action{
+  margin-top:16px;
+  padding:14px 16px;
+  background:#f7f9fb;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.store-action h3{color:var(--navy);}
+
 /* ---------- MOBILE / NARROW SCREENS ---------- */
 @media (max-width: 720px){
   header{padding:14px 16px;}
