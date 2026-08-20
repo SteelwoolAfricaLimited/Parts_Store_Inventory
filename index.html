@@ -43,8 +43,7 @@
   <button data-tab="reorder">Re-order Alerts</button>
   <button data-tab="monthly">Monthly Summary</button>
   <button data-tab="search">Stock Lookup</button>
-  <button data-tab="purchase">+ Log Purchase</button>
-  <button data-tab="issue">+ Log Issuance</button>
+  <button data-tab="purchase">+ Log Purchase/Returns</button>
   <button data-tab="newreq">+ New Requisition</button>
   <button data-tab="requisitions">Requisitions</button>
 </nav>
@@ -133,7 +132,7 @@
   <!-- PURCHASE FORM -->
   <div class="tab" id="tab-purchase">
     <div class="card" style="max-width:640px">
-      <h2>Log a Purchase (Goods Received)</h2>
+      <h2>Log a Purchase/Return (Items Received/Returned)</h2>
       <div id="purchaseMsg" class="msg"></div>
       <div class="field datalist-wrap">
         <label>Part Code / Name</label>
@@ -148,7 +147,7 @@
         <div class="field"><label>Supplier Name</label><input id="p_supplier"></div>
         <div class="field"><label>GRN No.</label><input id="p_grn" placeholder="auto-generated if blank"></div>
       </div>
-      <button class="primary" onclick="submitPurchase()">Save Purchase</button>
+      <button class="primary" onclick="submitPurchase()">Save Purchase/Return</button>
     </div>
   </div>
 
