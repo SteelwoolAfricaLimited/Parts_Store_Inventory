@@ -536,7 +536,7 @@ function renderRequisitionDetail() {
 
     if (CURRENT_USER && CURRENT_USER.role === 'store') {
       html +=
-        '<div class="detail-panel">' +
+        '<div class="store-action">' +
         '<h3 style="font-size:14px;margin:0 0 8px">Store Action</h3>' +
         '<div class="field" style="max-width:280px"><label>Store Keeper Code</label><input id="rq_storeCode" type="password" placeholder="Enter your code"></div>' +
         '<div class="field" style="max-width:480px"><label>Notes (optional)</label><input id="rq_storeNotes" placeholder="e.g. reason for revision"></div>' +
