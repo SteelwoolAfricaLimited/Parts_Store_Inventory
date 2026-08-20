@@ -128,7 +128,7 @@ function applyAccessControl() {
   const isStore = CURRENT_USER && CURRENT_USER.role === 'store';
 
   document.querySelectorAll('nav button').forEach(btn => {
-    btn.style.display = (isRequestor && REQUESTOR_RESTRICTED_TABS.includes(btn.dataset.tab)) ? 'none' : '';
+    btn.style.display = ((isRequestor || isStore) && REQUESTOR_RESTRICTED_TABS.includes(btn.dataset.tab)) ? 'none' : '';
   });
 
   if (isRequestor) {
