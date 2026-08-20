@@ -32,7 +32,7 @@ let REQ_CART = [];
 let REQ_SELECTED_ITEM = null;
 let REQ_SELECTED_FOR_PRINT = new Set();
 let ACCESS_LISTS = null;
-let CURRENT_USER = null; // { name, role: 'requestor' | 'approver' | 'store' }
+let CURRENT_USER = null; // { name, role: 'requestor' | 'approver' | 'superuser' | 'store' }
 
 const REQUESTOR_RESTRICTED_TABS = ['overview', 'movers', 'reorder', 'monthly', 'search', 'purchase', 'issue'];
 
@@ -72,8 +72,11 @@ function loadAccessLists() {
       '<optgroup label="Requesting Staff">' +
       lists.requestors.map(n => '<option value="' + escapeHtml(n) + '" data-role="requestor">' + escapeHtml(n) + '</option>').join('') +
       '</optgroup>' +
-      '<optgroup label="Approvers">' +
-      lists.approvers.map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
+      '<optgroup label="Stage 1 Approvers">' +
+      (lists.stage1Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
+      '</optgroup>' +
+      '<optgroup label="Stage 2 Approvers (Super Users)">' +
+      (lists.stage2Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="superuser">' + escapeHtml(n) + '</option>').join('') +
       '</optgroup>' +
       '<optgroup label="Store Personnel">' +
       (lists.storeKeepers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="store">' + escapeHtml(n) + '</option>').join('') +
@@ -92,7 +95,8 @@ function loadAccessLists() {
 function onGateNameChange() {
   const sel = document.getElementById('gate_name');
   const role = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.role : '';
-  document.getElementById('gate_codeWrap').style.display = (role === 'approver' || role === 'store') ? 'block' : 'none';
+  document.getElementById('gate_codeWrap').style.display =
+    (role === 'approver' || role === 'superuser' || role === 'store') ? 'block' : 'none';
   document.getElementById('gate_code').value = '';
   document.getElementById('gate_msg').style.display = 'none';
 }
@@ -105,7 +109,7 @@ function confirmIdentity() {
   if (!name) { gateMsg.textContent = 'Please select your name.'; gateMsg.style.display = 'block'; return; }
   const role = sel.selectedOptions[0].dataset.role;
 
-  if (role === 'approver' || role === 'store') {
+  if (role === 'approver' || role === 'superuser' || role === 'store') {
     const code = document.getElementById('gate_code').value.trim();
     if (!code) { gateMsg.textContent = 'Enter your code.'; gateMsg.style.display = 'block'; return; }
     callApi('verifyApprovalIdentity', name, code).then(res => {
@@ -534,11 +538,12 @@ function renderRequisitionDetail() {
       (d.header.stage2Date ? ' on ' + new Date(d.header.stage2Date).toLocaleDateString() : '') + '</p>' +
       '<button class="primary" onclick="printRequisition()">🖨️ Print / Download Requisition</button>';
 
-    if (CURRENT_USER && CURRENT_USER.role === 'store') {
+    // Store personnel AND Stage 2 approvers (super users) can perform store actions.
+    if (CURRENT_USER && (CURRENT_USER.role === 'store' || CURRENT_USER.role === 'superuser')) {
       html +=
         '<div class="store-action">' +
         '<h3 style="font-size:14px;margin:0 0 8px">Store Action</h3>' +
-        '<div class="field" style="max-width:280px"><label>Store Keeper Code</label><input id="rq_storeCode" type="password" placeholder="Enter your code"></div>' +
+        '<div class="field" style="max-width:280px"><label>' + (CURRENT_USER.role === 'superuser' ? 'Stage 2 Approval Code' : 'Store Keeper Code') + '</label><input id="rq_storeCode" type="password" placeholder="Enter your code"></div>' +
         '<div class="field" style="max-width:480px"><label>Notes (optional)</label><input id="rq_storeNotes" placeholder="e.g. reason for revision"></div>' +
         '<button class="primary" onclick="doStoreAction(\'Issued\')">✅ Mark Issued</button> ' +
         '<button class="secondary" onclick="doStoreAction(\'To Be Revised\')">✏️ To Be Revised</button> ' +
