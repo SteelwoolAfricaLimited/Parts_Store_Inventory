@@ -74,11 +74,11 @@
   <div class="tab" id="tab-movers">
     <div class="card">
       <h2>Top 30 Fast-Moving Items (by requisition frequency)</h2>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>#</th><th>Part Code</th><th>Part Name</th><th>Bin</th><th>Category</th>
         <th class="num-cell">Requisitions</th><th class="num-cell">Total Qty Issued</th></tr></thead>
         <tbody id="moversBody"></tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 
@@ -86,11 +86,11 @@
   <div class="tab" id="tab-reorder">
     <div class="card">
       <h2>Items Below Re-order Level</h2>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Part Code</th><th>Part Name</th><th>Bin</th><th class="num-cell">Expected Closing</th>
         <th class="num-cell">Re-order Level</th><th class="num-cell">Suggested Qty</th><th>Status</th></tr></thead>
         <tbody id="reorderBody"></tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 
@@ -107,7 +107,7 @@
         <button class="secondary" onclick="exportMonthlySummaryToExcelFile()">📥 Download as Excel</button>
         <span class="muted" id="monthlyMsg"></span>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-scroll">
         <table id="monthlyTable">
           <thead><tr id="monthlyHeaderRow"></tr></thead>
           <tbody id="monthlyBody"></tbody>
@@ -122,11 +122,11 @@
     <div class="card">
       <h2>Stock Balance Lookup — by Bin Location or Item Name</h2>
       <div class="toolbar"><input id="searchBox" placeholder="Type a bin location, part code, or item name…" oninput="doSearch()"></div>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Code</th><th>Name</th><th>Bin</th><th>Category</th>
         <th class="num-cell">Expected Closing</th><th class="num-cell">Re-order Level</th><th>Status</th></tr></thead>
         <tbody id="searchBody"></tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 
@@ -195,7 +195,7 @@
         <div class="field" style="display:flex;align-items:flex-end"><button class="secondary" style="width:100%" onclick="addReqItem()">+ Add to Requisition</button></div>
       </div>
 
-      <div style="overflow-x:auto">
+      <div class="table-scroll">
         <table>
           <thead><tr><th>Item No.</th><th>Part Number</th><th>Part Description</th><th class="num-cell">Qty Req.</th>
           <th>UoM</th><th>Bin Location</th><th>Purpose/Where to be Used</th><th>Old Part Returned</th><th></th></tr></thead>
@@ -227,10 +227,10 @@
         <button class="primary" onclick="printSelectedRequisitions()">🖨️ Print Selected (4 per A4 page)</button>
         <span class="muted" id="rq_selectedCount"></span>
       </div>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th style="width:28px"></th><th>Requisition No.</th><th>Date</th><th>Requested By</th><th class="num-cell">Items</th><th>Status</th></tr></thead>
         <tbody id="rq_listBody"></tbody>
-      </table>
+      </table></div>
 
       <p class="muted">Tick the box next to any <b>Approved</b> requisitions you want printed together — four per A4 sheet, in the order shown, with a dashed cut line between them.</p>
       <div class="detail-panel" id="rq_detailPanel" style="display:none">
@@ -239,11 +239,11 @@
           <span id="rq_detailStatus"></span>
         </div>
         <div id="rq_detailMsg" class="msg"></div>
-        <table>
+        <div class="table-scroll"><table>
           <thead><tr><th>Item No.</th><th>Part Number</th><th>Part Description</th><th class="num-cell">Qty Req.</th>
           <th>UoM</th><th>Bin Location</th><th>Purpose/Where to be Used</th><th>Old Part Returned</th></tr></thead>
           <tbody id="rq_detailItems"></tbody>
-        </table>
+        </table></div>
         <div style="margin-top:14px" id="rq_detailActions"></div>
       </div>
     </div>
