@@ -32,7 +32,7 @@ let REQ_CART = [];
 let REQ_SELECTED_ITEM = null;
 let REQ_SELECTED_FOR_PRINT = new Set();
 let ACCESS_LISTS = null;
-let CURRENT_USER = null; // { name, role: 'requestor' | 'approver' }
+let CURRENT_USER = null; // { name, role: 'requestor' | 'approver' | 'store' }
 
 const REQUESTOR_RESTRICTED_TABS = ['overview', 'movers', 'reorder', 'monthly', 'search', 'purchase', 'issue'];
 
@@ -74,6 +74,9 @@ function loadAccessLists() {
       '</optgroup>' +
       '<optgroup label="Approvers">' +
       lists.approvers.map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
+      '</optgroup>' +
+      '<optgroup label="Store Personnel">' +
+      (lists.storeKeepers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="store">' + escapeHtml(n) + '</option>').join('') +
       '</optgroup>';
     const rbSel = document.getElementById('rq_requestedBy');
     if (rbSel) {
@@ -89,7 +92,7 @@ function loadAccessLists() {
 function onGateNameChange() {
   const sel = document.getElementById('gate_name');
   const role = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.role : '';
-  document.getElementById('gate_codeWrap').style.display = role === 'approver' ? 'block' : 'none';
+  document.getElementById('gate_codeWrap').style.display = (role === 'approver' || role === 'store') ? 'block' : 'none';
   document.getElementById('gate_code').value = '';
   document.getElementById('gate_msg').style.display = 'none';
 }
@@ -102,11 +105,11 @@ function confirmIdentity() {
   if (!name) { gateMsg.textContent = 'Please select your name.'; gateMsg.style.display = 'block'; return; }
   const role = sel.selectedOptions[0].dataset.role;
 
-  if (role === 'approver') {
+  if (role === 'approver' || role === 'store') {
     const code = document.getElementById('gate_code').value.trim();
-    if (!code) { gateMsg.textContent = 'Enter your approval code.'; gateMsg.style.display = 'block'; return; }
+    if (!code) { gateMsg.textContent = 'Enter your code.'; gateMsg.style.display = 'block'; return; }
     callApi('verifyApprovalIdentity', name, code).then(res => {
-      if (!res.valid) { gateMsg.textContent = 'Incorrect approval code for ' + name + '.'; gateMsg.style.display = 'block'; return; }
+      if (!res.valid) { gateMsg.textContent = 'Incorrect code for ' + name + '.'; gateMsg.style.display = 'block'; return; }
       CURRENT_USER = { name: name, role: role };
       document.getElementById('identityGate').style.display = 'none';
       applyAccessControl();
@@ -122,6 +125,7 @@ function confirmIdentity() {
 
 function applyAccessControl() {
   const isRequestor = CURRENT_USER && CURRENT_USER.role === 'requestor';
+  const isStore = CURRENT_USER && CURRENT_USER.role === 'store';
 
   document.querySelectorAll('nav button').forEach(btn => {
     btn.style.display = (isRequestor && REQUESTOR_RESTRICTED_TABS.includes(btn.dataset.tab)) ? 'none' : '';
@@ -132,6 +136,11 @@ function applyAccessControl() {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelector('nav button[data-tab="newreq"]').classList.add('active');
     document.getElementById('tab-newreq').classList.add('active');
+  } else if (isStore) {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('nav button[data-tab="requisitions"]').classList.add('active');
+    document.getElementById('tab-requisitions').classList.add('active');
   }
 
   const rbSel = document.getElementById('rq_requestedBy');
@@ -433,7 +442,9 @@ function loadRequisitions() {
 }
 
 function statusBadge(status) {
-  const cls = status === 'Approved' ? 'ok' : (status === 'Rejected' ? 'reorder' : 'pending');
+  const cls = (status === 'Approved' || status === 'Issued') ? 'ok'
+    : (status === 'Rejected' || status === 'Cancelled') ? 'reorder'
+    : 'pending';
   return '<span class="badge ' + cls + '">' + escapeHtml(status) + '</span>';
 }
 
@@ -442,7 +453,7 @@ function renderRequisitionsList() {
   const filter = filterEl ? filterEl.value : 'All';
   const list = filter === 'All' ? REQUISITIONS : REQUISITIONS.filter(r => r.status === filter);
   document.getElementById('rq_listBody').innerHTML = list.length ? list.map(r => {
-    const canPrint = r.status === 'Approved';
+    const canPrint = r.status === 'Approved' || r.status === 'Issued';
     const checked = REQ_SELECTED_FOR_PRINT.has(r.reqNo) ? 'checked' : '';
     return '<tr>' +
       '<td onclick="event.stopPropagation()">' + (canPrint
@@ -516,12 +527,41 @@ function renderRequisitionDetail() {
       '<button class="secondary" onclick="doReject()">✖ Reject</button>' +
       '<p class="stage-note">Stage 2 approvers: Rocky Rohit or Mary Rimui.</p>';
   } else if (d.header.status === 'Approved') {
-    actions.innerHTML =
+    let html =
       '<p class="muted">Stage 1 approved by <b>' + escapeHtml(d.header.stage1ApprovedBy) + '</b>' +
       (d.header.stage1Date ? ' on ' + new Date(d.header.stage1Date).toLocaleDateString() : '') + '<br>' +
       'Final approval by <b>' + escapeHtml(d.header.stage2ApprovedBy) + '</b>' +
       (d.header.stage2Date ? ' on ' + new Date(d.header.stage2Date).toLocaleDateString() : '') + '</p>' +
       '<button class="primary" onclick="printRequisition()">🖨️ Print / Download Requisition</button>';
+
+    if (CURRENT_USER && CURRENT_USER.role === 'store') {
+      html +=
+        '<div class="detail-panel">' +
+        '<h3 style="font-size:14px;margin:0 0 8px">Store Action</h3>' +
+        '<div class="field" style="max-width:280px"><label>Store Keeper Code</label><input id="rq_storeCode" type="password" placeholder="Enter your code"></div>' +
+        '<div class="field" style="max-width:480px"><label>Notes (optional)</label><input id="rq_storeNotes" placeholder="e.g. reason for revision"></div>' +
+        '<button class="primary" onclick="doStoreAction(\'Issued\')">✅ Mark Issued</button> ' +
+        '<button class="secondary" onclick="doStoreAction(\'To Be Revised\')">✏️ To Be Revised</button> ' +
+        '<button class="secondary" onclick="doStoreAction(\'Cancelled\')">✖ Cancel</button>' +
+        '</div>';
+    }
+    actions.innerHTML = html;
+  } else if (d.header.status === 'Issued') {
+    actions.innerHTML =
+      '<p class="muted">Issued by <b>' + escapeHtml(d.header.storeActionBy) + '</b>' +
+      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleDateString() : '') +
+      (d.header.storeNotes ? ' — ' + escapeHtml(d.header.storeNotes) : '') + '</p>' +
+      '<button class="primary" onclick="printRequisition()">🖨️ Print / Download Requisition</button>';
+  } else if (d.header.status === 'To Be Revised') {
+    actions.innerHTML =
+      '<p class="muted">Flagged for revision by <b>' + escapeHtml(d.header.storeActionBy) + '</b>' +
+      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleDateString() : '') +
+      (d.header.storeNotes ? ' — ' + escapeHtml(d.header.storeNotes) : '') + '</p>';
+  } else if (d.header.status === 'Cancelled') {
+    actions.innerHTML =
+      '<p class="muted">Cancelled by <b>' + escapeHtml(d.header.storeActionBy) + '</b>' +
+      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleDateString() : '') +
+      (d.header.storeNotes ? ' — ' + escapeHtml(d.header.storeNotes) : '') + '</p>';
   } else if (d.header.status === 'Rejected') {
     actions.innerHTML = '<p class="muted">Rejected at Stage ' + escapeHtml(String(d.header.rejectedStage)) + ' by <b>' + escapeHtml(d.header.rejectedBy) + '</b>' +
       (d.header.notes ? ' — ' + escapeHtml(d.header.notes) : '') + '</p>';
@@ -554,6 +594,17 @@ function doReject() {
   const reason = prompt('Reason for rejection (optional):') || '';
   callApi('rejectRequisition', CURRENT_REQ_DETAIL.header.reqNo, code, reason).then(res => {
     showMsg('rq_detailMsg', res.reqNo + ' rejected.', true);
+    loadRequisitions();
+    viewRequisition(res.reqNo);
+  }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
+}
+
+function doStoreAction(action) {
+  const code = document.getElementById('rq_storeCode').value.trim();
+  const notes = document.getElementById('rq_storeNotes').value.trim();
+  if (!code) { showMsg('rq_detailMsg', 'Enter your Store Keeper code.', false); return; }
+  callApi('markRequisitionStoreAction', CURRENT_REQ_DETAIL.header.reqNo, code, action, notes).then(res => {
+    showMsg('rq_detailMsg', res.reqNo + ' marked as "' + res.status + '" by ' + res.by + '.', true);
     loadRequisitions();
     viewRequisition(res.reqNo);
   }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
