@@ -339,6 +339,7 @@ function filterItems(prefix) {
 function pickItem(prefix, code) {
   document.getElementById(prefix + '_code').value = code;
   document.getElementById(prefix + '_suggest').style.display = 'none';
+  if (prefix === 'p') fillPurchaseDefaults_(code);
 }
 
 function submitPurchase() {
@@ -359,7 +360,15 @@ function submitPurchase() {
     load();
   }).catch(err => showMsg('purchaseMsg', 'Error: ' + err.message, false));
 }
-
+function fillPurchaseDefaults_(code) {
+  const item = ITEMS.find(i => i.code === code);
+  if (!item) return;
+  callApi('getItemPurchaseInfoByName', item.name).then(info => {
+    if (!info) return;
+    document.getElementById('p_unitCost').value = info.unitCost;
+    document.getElementById('p_toBin').value = info.bin;
+  }).catch(() => {});
+}
 function submitIssuance() {
   document.getElementById('i_date').value = document.getElementById('i_date').value || todayStr();
   const form = {
