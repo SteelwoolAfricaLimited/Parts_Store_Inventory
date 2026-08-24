@@ -396,8 +396,14 @@ function filterReqItems() {
   const box = document.getElementById('rq_suggest');
   if (!val) { box.style.display = 'none'; box.innerHTML = ''; REQ_SELECTED_ITEM = null; renderStockInfo(null); return; }
   const matches = ITEMS.filter(i => i.code.toLowerCase().indexOf(val) !== -1 || i.name.toLowerCase().indexOf(val) !== -1).slice(0, 20);
-  box.innerHTML = matches.map(i => '<div onclick="pickReqItem(\'' + i.code.replace(/'/g, "\\'") + '\')">' +
-    '<b>' + escapeHtml(i.code) + '</b> — ' + escapeHtml(i.name) + ' <span class="muted">(' + escapeHtml(i.bin) + ')</span></div>').join('');
+  box.innerHTML = matches.map(i =>
+    '<div onclick="pickReqItem(\'' + i.code.replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:8px">' +
+      (i.photoUrl
+        ? '<img src="' + i.photoUrl + '" loading="lazy" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex:0 0 auto">'
+        : '<div style="width:32px;height:32px;flex:0 0 auto;background:#eee;border-radius:4px"></div>') +
+      '<div><b>' + escapeHtml(i.code) + '</b> — ' + escapeHtml(i.name) + ' <span class="muted">(' + escapeHtml(i.bin) + ')</span></div>' +
+    '</div>'
+  ).join('');
   box.style.display = matches.length ? 'block' : 'none';
 }
 function pickReqItem(code) {
@@ -408,15 +414,19 @@ function pickReqItem(code) {
   document.getElementById('rq_bin').value = item.bin || '';
   document.getElementById('rq_suggest').style.display = 'none';
   document.getElementById('rq_stockInfo').innerHTML = '<span class="muted">Checking available stock…</span>';
-  callApi('getItemStock', code).then(renderStockInfo).catch(() => renderStockInfo(null));
+  callApi('getItemStock', code).then(stock => renderStockInfo(stock, item.photoUrl)).catch(() => renderStockInfo(null));
 }
-function renderStockInfo(stock) {
+
+function renderStockInfo(stock, photoUrl) {
   const el = document.getElementById('rq_stockInfo');
   if (!stock) { el.innerHTML = ''; return; }
   const qty = Number(stock.expectedClosing) || 0;
   const cls = qty <= 0 ? 'reorder' : (stock.needsReorder ? 'reorder' : 'ok');
   const label = qty <= 0 ? 'Out of stock' : (stock.needsReorder ? 'Below re-order level' : 'In stock');
-  el.innerHTML = 'Available stock: <b>' + fmt(qty) + ' ' + escapeHtml(stock.uom) + '</b> <span class="badge ' + cls + '">' + label + '</span>';
+  const img = photoUrl
+    ? '<img src="' + photoUrl + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-right:10px;vertical-align:middle">'
+    : '';
+  el.innerHTML = img + 'Available stock: <b>' + fmt(qty) + ' ' + escapeHtml(stock.uom) + '</b> <span class="badge ' + cls + '">' + label + '</span>';
 }
 function addReqItem() {
   if (!REQ_SELECTED_ITEM) { showMsg('newReqMsg', 'Search and select a part first.', false); return; }
@@ -649,4 +659,27 @@ function printRequisition() {
     w.document.write(html);
     w.document.close();
   }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
+}
+function renderCatalogue() {
+  const q = document.getElementById('catSearchBox').value.trim().toLowerCase();
+  const list = q
+    ? ITEMS.filter(i => (i.code + i.name + i.bin).toLowerCase().indexOf(q) !== -1)
+    : ITEMS.slice(0, 60);
+
+  document.getElementById('catGrid').innerHTML = list.length ? list.map(i =>
+    '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff">' +
+      (i.photoUrl
+        ? '<img src="' + i.photoUrl + '" loading="lazy" style="width:100%;height:120px;object-fit:cover;display:block">'
+        : '<div style="width:100%;height:120px;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px">No photo</div>') +
+      '<div style="padding:8px 10px">' +
+        '<div style="font-weight:600;font-size:12.5px">' + escapeHtml(i.code) + '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + escapeHtml(i.name) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px">Bin: ' + escapeHtml(i.bin) + '</div>' +
+      '</div>' +
+    '</div>'
+  ).join('') : '<div class="empty">No matches.</div>';
+
+  document.getElementById('catFooterNote').textContent = q
+    ? (list.length + ' item(s) match "' + document.getElementById('catSearchBox').value + '".')
+    : ('Showing first 60 of ' + ITEMS.length + ' items — type in the search box to filter all ' + ITEMS.length + '.');
 }
