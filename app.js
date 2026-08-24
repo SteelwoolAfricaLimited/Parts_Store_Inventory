@@ -189,6 +189,7 @@ function todayStr() { return new Date().toISOString().slice(0, 10); }
 function load() {
   callApi('getDashboardData').then(renderAll).catch(showLoadError);
   callApi('getItemPickList').then(items => ITEMS = items).catch(() => {});
+  callApi('getItemPickList').then(items => { ITEMS = items; renderCatalogue(); }).catch(() => {});
   callApi('getMonthlySummaryData').then(d => { MONTHLY_DATA = d; renderMonthlySummary(); }).catch(() => {});
   loadRequisitions();
   loadAccessLists();
