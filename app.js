@@ -34,7 +34,7 @@ let REQ_SELECTED_FOR_PRINT = new Set();
 let ACCESS_LISTS = null;
 let CURRENT_USER = null; // { name, role: 'requestor' | 'approver' | 'superuser' | 'store' }
 
-const REQUESTOR_RESTRICTED_TABS = ['overview', 'movers', 'reorder', 'monthly', 'search', 'purchase', 'issue'];
+const REQUESTOR_RESTRICTED_TABS = ['overview', 'movers', 'reorder', 'monthly', 'search', 'purchase'];
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.APP_CONFIG || !window.APP_CONFIG.APPS_SCRIPT_URL || window.APP_CONFIG.APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
@@ -47,17 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-
-      if (btn.dataset.tab === 'monthly' && !MONTHLY_DATA) {
-        document.getElementById('monthlyMsg').textContent = 'Loading…';
-        callApi('getMonthlySummaryData').then(d => {
-          MONTHLY_DATA = d;
-          renderMonthlySummary();
-          document.getElementById('monthlyMsg').textContent = '';
-        }).catch(err => {
-          document.getElementById('monthlyMsg').textContent = 'Error: ' + err.message;
-        });
-      }
     });
   });
 
@@ -75,6 +64,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---- Identity gate ----
+function loadAccessLists() {
+  callApi('getRequisitionAccessLists').then(lists => {
+    ACCESS_LISTS = lists;
+    const gateSel = document.getElementById('gate_name');
+    gateSel.innerHTML = '<option value="">— Select your name —</option>' +
+      '<optgroup label="Requesting Staff">' +
+      lists.requestors.map(n => '<option value="' + escapeHtml(n) + '" data-role="requestor">' + escapeHtml(n) + '</option>').join('') +
+      '</optgroup>' +
+      '<optgroup label="Stage 1 Approvers">' +
+      (lists.stage1Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
+      '</optgroup>' +
+      '<optgroup label="Stage 2 Approvers (Super Users)">' +
+      (lists.stage2Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="superuser">' + escapeHtml(n) + '</option>').join('') +
+      '</optgroup>' +
+      '<optgroup label="Store Personnel">' +
+      (lists.storeKeepers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="store">' + escapeHtml(n) + '</option>').join('') +
+      '</optgroup>';
+    const rbSel = document.getElementById('rq_requestedBy');
+    if (rbSel) {
+      rbSel.innerHTML = '<option value="">— Select requester —</option>' +
+        lists.requestors.map(n => '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>').join('');
+    }
+  }).catch(err => {
+    document.getElementById('gate_msg').textContent = 'Could not load names: ' + err.message;
+    document.getElementById('gate_msg').style.display = 'block';
+  });
+}
 
 function onGateNameChange() {
   const sel = document.getElementById('gate_name');
@@ -171,39 +187,11 @@ function fmt(n) {
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 function load() {
-  callApi('getInitialAppData').then(data => {
-    renderAll(data.dashboard);
-    ITEMS = data.items;
-    renderCatalogue();
-    REQUISITIONS = data.requisitions;
-    renderRequisitionsList();
-    populateAccessLists_(data.accessLists);
-  }).catch(showLoadError);
-}
-
-// Extracted from the old loadAccessLists() — populates the DOM from data
-// that's already been fetched, without making its own network call.
-function populateAccessLists_(lists) {
-  ACCESS_LISTS = lists;
-  const gateSel = document.getElementById('gate_name');
-  gateSel.innerHTML = '<option value="">— Select your name —</option>' +
-    '<optgroup label="Requesting Staff">' +
-    lists.requestors.map(n => '<option value="' + escapeHtml(n) + '" data-role="requestor">' + escapeHtml(n) + '</option>').join('') +
-    '</optgroup>' +
-    '<optgroup label="Stage 1 Approvers">' +
-    (lists.stage1Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
-    '</optgroup>' +
-    '<optgroup label="Stage 2 Approvers (Super Users)">' +
-    (lists.stage2Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="superuser">' + escapeHtml(n) + '</option>').join('') +
-    '</optgroup>' +
-    '<optgroup label="Store Personnel">' +
-    (lists.storeKeepers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="store">' + escapeHtml(n) + '</option>').join('') +
-    '</optgroup>';
-  const rbSel = document.getElementById('rq_requestedBy');
-  if (rbSel) {
-    rbSel.innerHTML = '<option value="">— Select requester —</option>' +
-      lists.requestors.map(n => '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>').join('');
-  }
+  callApi('getDashboardData').then(renderAll).catch(showLoadError);
+  callApi('getItemPickList').then(items => { ITEMS = items; renderCatalogue(); }).catch(() => {});
+  callApi('getMonthlySummaryData').then(d => { MONTHLY_DATA = d; renderMonthlySummary(); }).catch(() => {});
+  loadRequisitions();
+  loadAccessLists();
 }
 
 function showLoadError(err) {
@@ -354,6 +342,19 @@ function pickItem(prefix, code) {
   if (prefix === 'p') fillPurchaseDefaults_(code);
 }
 
+// Autofills Unit Cost and Bin Location from Stocks Balance the moment a
+// part is picked on the Log Purchase form. Both fields stay fully editable
+// afterward — this only sets an initial value.
+function fillPurchaseDefaults_(code) {
+  const item = ITEMS.find(i => i.code === code);
+  if (!item) return;
+  callApi('getItemPurchaseInfoByName', item.name).then(info => {
+    if (!info) return;
+    document.getElementById('p_unitCost').value = info.unitCost;
+    document.getElementById('p_toBin').value = info.bin;
+  }).catch(() => {});
+}
+
 function submitPurchase() {
   document.getElementById('p_date').value = document.getElementById('p_date').value || todayStr();
   const form = {
@@ -372,33 +373,38 @@ function submitPurchase() {
     load();
   }).catch(err => showMsg('purchaseMsg', 'Error: ' + err.message, false));
 }
-function fillPurchaseDefaults_(code) {
-  const item = ITEMS.find(i => i.code === code);
-  if (!item) return;
-  callApi('getItemPurchaseInfoByName', item.name).then(info => {
-    if (!info) return;
-    document.getElementById('p_unitCost').value = info.unitCost;
-    document.getElementById('p_toBin').value = info.bin;
-  }).catch(() => {});
-}
-function submitIssuance() {
-  document.getElementById('i_date').value = document.getElementById('i_date').value || todayStr();
-  const form = {
-    code: document.getElementById('i_code').value.trim(),
-    date: document.getElementById('i_date').value,
-    qty: document.getElementById('i_qty').value,
-    fromBin: document.getElementById('i_fromBin').value,
-    requestedBy: document.getElementById('i_requestedBy').value,
-    approvedBy: document.getElementById('i_approvedBy').value,
-    prq: document.getElementById('i_prq').value,
-    remarks: document.getElementById('i_remarks').value
-  };
-  if (!form.code || !form.qty) { showMsg('issueMsg', 'Part code and quantity are required.', false); return; }
-  callApi('addIssuance', form).then(res => {
-    showMsg('issueMsg', 'Issuance saved. ' + res.reorderCount + ' item(s) currently need re-ordering.', true);
-    ['i_code', 'i_qty', 'i_fromBin', 'i_requestedBy', 'i_approvedBy', 'i_prq', 'i_remarks'].forEach(id => document.getElementById(id).value = '');
-    load();
-  }).catch(err => showMsg('issueMsg', 'Error: ' + err.message, false));
+
+// ================= CATALOGUE =================
+
+function renderCatalogue() {
+  const box = document.getElementById('catSearchBox');
+  const grid = document.getElementById('catGrid');
+  if (!box || !grid) return; // catalogue tab not present in this build
+
+  const q = box.value.trim().toLowerCase();
+  const list = q
+    ? ITEMS.filter(i => (i.code + i.name + i.bin).toLowerCase().indexOf(q) !== -1)
+    : ITEMS.slice(0, 60);
+
+  grid.innerHTML = list.length ? list.map(i =>
+    '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff">' +
+      (i.photoUrl
+        ? '<img src="' + i.photoUrl + '" loading="lazy" style="width:100%;height:120px;object-fit:cover;display:block">'
+        : '<div style="width:100%;height:120px;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px">No photo</div>') +
+      '<div style="padding:8px 10px">' +
+        '<div style="font-weight:600;font-size:12.5px">' + escapeHtml(i.code) + '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + escapeHtml(i.name) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px">Bin: ' + escapeHtml(i.bin) + '</div>' +
+      '</div>' +
+    '</div>'
+  ).join('') : '<div class="empty">No matches.</div>';
+
+  const footer = document.getElementById('catFooterNote');
+  if (footer) {
+    footer.textContent = q
+      ? (list.length + ' item(s) match "' + box.value + '".')
+      : ('Showing first 60 of ' + ITEMS.length + ' items — type in the search box to filter all ' + ITEMS.length + '.');
+  }
 }
 
 // ================= REQUISITIONS =================
@@ -428,7 +434,6 @@ function pickReqItem(code) {
   document.getElementById('rq_stockInfo').innerHTML = '<span class="muted">Checking available stock…</span>';
   callApi('getItemStock', code).then(stock => renderStockInfo(stock, item.photoUrl)).catch(() => renderStockInfo(null));
 }
-
 function renderStockInfo(stock, photoUrl) {
   const el = document.getElementById('rq_stockInfo');
   if (!stock) { el.innerHTML = ''; return; }
@@ -671,27 +676,4 @@ function printRequisition() {
     w.document.write(html);
     w.document.close();
   }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
-}
-function renderCatalogue() {
-  const q = document.getElementById('catSearchBox').value.trim().toLowerCase();
-  const list = q
-    ? ITEMS.filter(i => (i.code + i.name + i.bin).toLowerCase().indexOf(q) !== -1)
-    : ITEMS.slice(0, 60);
-
-  document.getElementById('catGrid').innerHTML = list.length ? list.map(i =>
-    '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff">' +
-      (i.photoUrl
-        ? '<img src="' + i.photoUrl + '" loading="lazy" style="width:100%;height:120px;object-fit:cover;display:block">'
-        : '<div style="width:100%;height:120px;background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px">No photo</div>') +
-      '<div style="padding:8px 10px">' +
-        '<div style="font-weight:600;font-size:12.5px">' + escapeHtml(i.code) + '</div>' +
-        '<div style="font-size:12px;color:var(--muted)">' + escapeHtml(i.name) + '</div>' +
-        '<div style="font-size:11px;color:var(--muted);margin-top:2px">Bin: ' + escapeHtml(i.bin) + '</div>' +
-      '</div>' +
-    '</div>'
-  ).join('') : '<div class="empty">No matches.</div>';
-
-  document.getElementById('catFooterNote').textContent = q
-    ? (list.length + ' item(s) match "' + document.getElementById('catSearchBox').value + '".')
-    : ('Showing first 60 of ' + ITEMS.length + ' items — type in the search box to filter all ' + ITEMS.length + '.');
 }
