@@ -3,7 +3,7 @@
 // Script API (different origin) — those always need a live connection to
 // read/write your Google Sheet, and are left to fail naturally when offline.
 
-const CACHE_NAME = 'parts-inventory-shell-v1';
+const CACHE_NAME = 'parts-inventory-shell-v2';
 const SHELL_FILES = [
   './',
   './index.html',
