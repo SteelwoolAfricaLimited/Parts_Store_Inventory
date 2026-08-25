@@ -47,6 +47,17 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+
+      if (btn.dataset.tab === 'monthly' && !MONTHLY_DATA) {
+        document.getElementById('monthlyMsg').textContent = 'Loading…';
+        callApi('getMonthlySummaryData').then(d => {
+          MONTHLY_DATA = d;
+          renderMonthlySummary();
+          document.getElementById('monthlyMsg').textContent = '';
+        }).catch(err => {
+          document.getElementById('monthlyMsg').textContent = 'Error: ' + err.message;
+        });
+      }
     });
   });
 
@@ -64,33 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---- Identity gate ----
-function loadAccessLists() {
-  callApi('getRequisitionAccessLists').then(lists => {
-    ACCESS_LISTS = lists;
-    const gateSel = document.getElementById('gate_name');
-    gateSel.innerHTML = '<option value="">— Select your name —</option>' +
-      '<optgroup label="Requesting Staff">' +
-      lists.requestors.map(n => '<option value="' + escapeHtml(n) + '" data-role="requestor">' + escapeHtml(n) + '</option>').join('') +
-      '</optgroup>' +
-      '<optgroup label="Stage 1 Approvers">' +
-      (lists.stage1Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
-      '</optgroup>' +
-      '<optgroup label="Stage 2 Approvers (Super Users)">' +
-      (lists.stage2Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="superuser">' + escapeHtml(n) + '</option>').join('') +
-      '</optgroup>' +
-      '<optgroup label="Store Personnel">' +
-      (lists.storeKeepers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="store">' + escapeHtml(n) + '</option>').join('') +
-      '</optgroup>';
-    const rbSel = document.getElementById('rq_requestedBy');
-    if (rbSel) {
-      rbSel.innerHTML = '<option value="">— Select requester —</option>' +
-        lists.requestors.map(n => '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>').join('');
-    }
-  }).catch(err => {
-    document.getElementById('gate_msg').textContent = 'Could not load names: ' + err.message;
-    document.getElementById('gate_msg').style.display = 'block';
-  });
-}
 
 function onGateNameChange() {
   const sel = document.getElementById('gate_name');
@@ -187,12 +171,39 @@ function fmt(n) {
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 function load() {
-  callApi('getDashboardData').then(renderAll).catch(showLoadError);
-  callApi('getItemPickList').then(items => ITEMS = items).catch(() => {});
-  callApi('getItemPickList').then(items => { ITEMS = items; renderCatalogue(); }).catch(() => {});
-  callApi('getMonthlySummaryData').then(d => { MONTHLY_DATA = d; renderMonthlySummary(); }).catch(() => {});
-  loadRequisitions();
-  loadAccessLists();
+  callApi('getInitialAppData').then(data => {
+    renderAll(data.dashboard);
+    ITEMS = data.items;
+    renderCatalogue();
+    REQUISITIONS = data.requisitions;
+    renderRequisitionsList();
+    populateAccessLists_(data.accessLists);
+  }).catch(showLoadError);
+}
+
+// Extracted from the old loadAccessLists() — populates the DOM from data
+// that's already been fetched, without making its own network call.
+function populateAccessLists_(lists) {
+  ACCESS_LISTS = lists;
+  const gateSel = document.getElementById('gate_name');
+  gateSel.innerHTML = '<option value="">— Select your name —</option>' +
+    '<optgroup label="Requesting Staff">' +
+    lists.requestors.map(n => '<option value="' + escapeHtml(n) + '" data-role="requestor">' + escapeHtml(n) + '</option>').join('') +
+    '</optgroup>' +
+    '<optgroup label="Stage 1 Approvers">' +
+    (lists.stage1Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="approver">' + escapeHtml(n) + '</option>').join('') +
+    '</optgroup>' +
+    '<optgroup label="Stage 2 Approvers (Super Users)">' +
+    (lists.stage2Approvers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="superuser">' + escapeHtml(n) + '</option>').join('') +
+    '</optgroup>' +
+    '<optgroup label="Store Personnel">' +
+    (lists.storeKeepers || []).map(n => '<option value="' + escapeHtml(n) + '" data-role="store">' + escapeHtml(n) + '</option>').join('') +
+    '</optgroup>';
+  const rbSel = document.getElementById('rq_requestedBy');
+  if (rbSel) {
+    rbSel.innerHTML = '<option value="">— Select requester —</option>' +
+      lists.requestors.map(n => '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>').join('');
+  }
 }
 
 function showLoadError(err) {
