@@ -477,16 +477,29 @@ function submitRequisition() {
   document.getElementById('rq_date').value = document.getElementById('rq_date').value || todayStr();
   if (!requestedBy) { showMsg('newReqMsg', 'Select who this requisition is for.', false); return; }
   if (REQ_CART.length === 0) { showMsg('newReqMsg', 'Add at least one item.', false); return; }
+
+  const btn = document.getElementById('rq_submitBtn');
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.innerHTML = '<span class="spin"></span>Submitting…';
+  document.getElementById('newReqMsg').style.display = 'none';
+
   const form = { requestedBy: requestedBy, date: document.getElementById('rq_date').value, items: REQ_CART };
   callApi('createRequisition', form).then(res => {
-    showMsg('newReqMsg', 'Requisition ' + res.reqNo + ' submitted — awaiting Stage 1 approval (' + res.itemCount + ' item(s)).', true);
+    showMsg('newReqMsg', '✅ Requisition ' + res.reqNo + ' submitted successfully — awaiting Stage 1 approval (' + res.itemCount + ' item(s)).', true);
     REQ_CART = [];
     renderReqCart();
     if (!(CURRENT_USER && CURRENT_USER.role === 'requestor')) {
       document.getElementById('rq_requestedBy').value = '';
     }
     loadRequisitions();
-  }).catch(err => showMsg('newReqMsg', 'Error: ' + err.message, false));
+    btn.textContent = originalLabel;
+    btn.disabled = false; // re-enabled for the NEXT requisition, but this one is safely submitted
+  }).catch(err => {
+    showMsg('newReqMsg', 'Error: ' + err.message, false);
+    btn.textContent = originalLabel;
+    btn.disabled = false; // re-enable so the user can retry after a genuine failure
+  });
 }
 
 function loadRequisitions() {
