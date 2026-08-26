@@ -40,7 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!window.APP_CONFIG || !window.APP_CONFIG.APPS_SCRIPT_URL || window.APP_CONFIG.APPS_SCRIPT_URL.indexOf('PASTE_YOUR') !== -1) {
     document.getElementById('configBanner').style.display = 'block';
   }
-
+  // Requisition date is always "now" server-side — show today's date and lock it.
+  const rqDateEl = document.getElementById('rq_date');
+  if (rqDateEl) {
+    rqDateEl.value = todayStr();
+    rqDateEl.disabled = true;
+  }
   document.querySelectorAll('nav button').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
