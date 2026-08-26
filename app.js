@@ -508,7 +508,8 @@ function loadRequisitions() {
 }
 
 function statusBadge(status) {
-  const cls = (status === 'Approved' || status === 'Issued') ? 'ok'
+  const cls = status === 'Approved' ? 'ok'
+    : status === 'Issued' ? 'issued'
     : (status === 'Rejected' || status === 'Cancelled') ? 'reorder'
     : 'pending';
   return '<span class="badge ' + cls + '">' + escapeHtml(status) + '</span>';
