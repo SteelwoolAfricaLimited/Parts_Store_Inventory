@@ -527,7 +527,7 @@ function renderRequisitionsList() {
         ? '<input type="checkbox" ' + checked + ' onchange="toggleReqSelected(\'' + r.reqNo + '\', this.checked)">'
         : '') + '</td>' +
       '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')"><b>' + escapeHtml(r.reqNo) + '</b></td>' +
-      '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + (r.dateRequested ? new Date(r.dateRequested).toLocaleDateString() : '—') + '</td>' +
+      '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + (r.dateRequested ? new Date(r.dateRequested).toLocaleString() : '—') + '</td>' +
       '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + escapeHtml(r.requestedBy) + '</td>' +
       '<td class="num-cell clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + r.itemCount + '</td>' +
       '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + statusBadge(r.status) + '</td></tr>';
@@ -588,7 +588,7 @@ function renderRequisitionDetail() {
   } else if (d.header.status === 'Pending Stage 2 Approval') {
     actions.innerHTML =
       '<p class="muted">Stage 1 approved by <b>' + escapeHtml(d.header.stage1ApprovedBy) + '</b>' +
-      (d.header.stage1Date ? ' on ' + new Date(d.header.stage1Date).toLocaleDateString() : '') + '</p>' +
+      (d.header.stage1Date ? ' on ' + new Date(d.header.stage1Date).toLocaleString() : '') + '</p>' +
       '<div class="field" style="max-width:280px"><label>Stage 2 (Final) Approval Code</label><input id="rq_approvalCode" type="password" placeholder="Enter your code"></div>' +
       '<button class="primary" onclick="doApproveStage2()">✅ Approve (Final)</button> ' +
       '<button class="secondary" onclick="doReject()">✖ Reject</button>' +
@@ -596,9 +596,9 @@ function renderRequisitionDetail() {
   } else if (d.header.status === 'Approved') {
     let html =
       '<p class="muted">Stage 1 approved by <b>' + escapeHtml(d.header.stage1ApprovedBy) + '</b>' +
-      (d.header.stage1Date ? ' on ' + new Date(d.header.stage1Date).toLocaleDateString() : '') + '<br>' +
+      (d.header.stage1Date ? ' on ' + new Date(d.header.stage1Date).toLocaleString() : '') + '<br>' +
       'Final approval by <b>' + escapeHtml(d.header.stage2ApprovedBy) + '</b>' +
-      (d.header.stage2Date ? ' on ' + new Date(d.header.stage2Date).toLocaleDateString() : '') + '</p>' +
+      (d.header.stage2Date ? ' on ' + new Date(d.header.stage2Date).toLocaleString() : '') + '</p>' +
       '<button class="primary" onclick="printRequisition()">🖨️ Print / Download Requisition</button>';
 
     // Store personnel AND Stage 2 approvers (super users) can perform store actions.
@@ -617,18 +617,18 @@ function renderRequisitionDetail() {
   } else if (d.header.status === 'Issued') {
     actions.innerHTML =
       '<p class="muted">Issued by <b>' + escapeHtml(d.header.storeActionBy) + '</b>' +
-      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleDateString() : '') +
+      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleString() : '') +
       (d.header.storeNotes ? ' — ' + escapeHtml(d.header.storeNotes) : '') + '</p>' +
       '<button class="primary" onclick="printRequisition()">🖨️ Print / Download Requisition</button>';
   } else if (d.header.status === 'To Be Revised') {
     actions.innerHTML =
       '<p class="muted">Flagged for revision by <b>' + escapeHtml(d.header.storeActionBy) + '</b>' +
-      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleDateString() : '') +
+      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleString() : '') +
       (d.header.storeNotes ? ' — ' + escapeHtml(d.header.storeNotes) : '') + '</p>';
   } else if (d.header.status === 'Cancelled') {
     actions.innerHTML =
       '<p class="muted">Cancelled by <b>' + escapeHtml(d.header.storeActionBy) + '</b>' +
-      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleDateString() : '') +
+      (d.header.storeActionDate ? ' on ' + new Date(d.header.storeActionDate).toLocaleString() : '') +
       (d.header.storeNotes ? ' — ' + escapeHtml(d.header.storeNotes) : '') + '</p>';
   } else if (d.header.status === 'Rejected') {
     actions.innerHTML = '<p class="muted">Rejected at Stage ' + escapeHtml(String(d.header.rejectedStage)) + ' by <b>' + escapeHtml(d.header.rejectedBy) + '</b>' +
