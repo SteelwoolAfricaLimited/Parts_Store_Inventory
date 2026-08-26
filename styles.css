@@ -27,6 +27,7 @@ tr:hover td{background:#fafbfc;}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
 .badge.reorder{background:#fdecea;color:var(--red);}
 .badge.ok{background:#e8f5e9;color:var(--accent);}
+.badge.issued { background: #e3f2fd; color: #1565c0; }
 .rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;}
 .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
 input,select{padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%;}
