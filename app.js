@@ -528,7 +528,7 @@ function renderRequisitionsList() {
     : filter === 'Active' ? REQUISITIONS.filter(r => HIDDEN_STATUSES.indexOf(r.status) === -1)
     : REQUISITIONS.filter(r => r.status === filter);
   document.getElementById('rq_listBody').innerHTML = list.length ? list.map(r => {
-    const canPrint = r.status === 'Approved' || r.status === 'Issued';
+    const canPrint = r.status === 'Approved - Awaiting Issuance' || r.status === 'Issued';
     const checked = REQ_SELECTED_FOR_PRINT.has(r.reqNo) ? 'checked' : '';
     return '<tr>' +
       '<td onclick="event.stopPropagation()">' + (canPrint
@@ -539,7 +539,7 @@ function renderRequisitionsList() {
       '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + escapeHtml(r.requestedBy) + '</td>' +
       '<td class="num-cell clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + r.itemCount + '</td>' +
       '<td class="clickable" onclick="viewRequisition(\'' + r.reqNo + '\')">' + statusBadge(r.status) + '</td></tr>';
-  }).join('') : '<tr><td colspan="6" class="empty">No requisitions' + (filter === 'All' ? '' : ' with status "' + escapeHtml(filter) + '"') + ' yet.</td></tr>';
+  }).join('') : '<tr><td colspan="6" class="empty">No requisitions' + (filter === 'All' || filter === 'Active' ? '' : ' with status "' + escapeHtml(filter) + '"') + ' yet.</td></tr>';
   updateSelectedCount();
 }
 
