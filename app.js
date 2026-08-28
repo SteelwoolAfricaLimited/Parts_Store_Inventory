@@ -522,8 +522,11 @@ function statusBadge(status) {
 
 function renderRequisitionsList() {
   const filterEl = document.getElementById('rq_statusFilter');
-  const filter = filterEl ? filterEl.value : 'All';
-  const list = filter === 'All' ? REQUISITIONS : REQUISITIONS.filter(r => r.status === filter);
+  const filter = filterEl ? filterEl.value : 'Active';
+  const HIDDEN_STATUSES = ['Issued', 'Cancelled', 'Rejected'];
+  const list = filter === 'All' ? REQUISITIONS
+    : filter === 'Active' ? REQUISITIONS.filter(r => HIDDEN_STATUSES.indexOf(r.status) === -1)
+    : REQUISITIONS.filter(r => r.status === filter);
   document.getElementById('rq_listBody').innerHTML = list.length ? list.map(r => {
     const canPrint = r.status === 'Approved' || r.status === 'Issued';
     const checked = REQ_SELECTED_FOR_PRINT.has(r.reqNo) ? 'checked' : '';
