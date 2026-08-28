@@ -617,9 +617,9 @@ function renderRequisitionDetail() {
         '<h3 style="font-size:14px;margin:0 0 8px">Store Action</h3>' +
         '<div class="field" style="max-width:280px"><label>' + (CURRENT_USER.role === 'superuser' ? 'Stage 2 Approval Code' : 'Store Keeper Code') + '</label><input id="rq_storeCode" type="password" placeholder="Enter your code"></div>' +
         '<div class="field" style="max-width:480px"><label>Notes (optional)</label><input id="rq_storeNotes" placeholder="e.g. reason for revision"></div>' +
-        '<button class="primary" onclick="doStoreAction(\'Issued\')">✅ Mark Issued</button> ' +
-        '<button class="secondary" onclick="doStoreAction(\'To Be Revised\')">✏️ To Be Revised</button> ' +
-        '<button class="secondary" onclick="doStoreAction(\'Cancelled\')">✖ Cancel</button>' +
+        '<button class="primary" onclick="doStoreAction(\'Issued\', this)">✅ Mark Issued</button> ' +
+        '<button class="secondary" onclick="doStoreAction(\'To Be Revised\', this)">✏️ To Be Revised</button> ' +
+        '<button class="secondary" onclick="doStoreAction(\'Cancelled\', this)">✖ Cancel</button>' +
         '</div>';
     }
     actions.innerHTML = html;
@@ -676,15 +676,27 @@ function doReject() {
   }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
 }
 
-function doStoreAction(action) {
+function doStoreAction(action, btn) {
   const code = document.getElementById('rq_storeCode').value.trim();
   const notes = document.getElementById('rq_storeNotes').value.trim();
   if (!code) { showMsg('rq_detailMsg', 'Enter your Store Keeper code.', false); return; }
+
+  const group = btn.parentElement;
+  const buttons = group.querySelectorAll('button');
+  buttons.forEach(b => b.disabled = true);
+  const originalLabel = btn.innerHTML;
+  const spinClass = btn.classList.contains('primary') ? 'spin' : 'spin-dark';
+  btn.innerHTML = '<span class="' + spinClass + '"></span>Processing…';
+
   callApi('markRequisitionStoreAction', CURRENT_REQ_DETAIL.header.reqNo, code, action, notes).then(res => {
     showMsg('rq_detailMsg', res.reqNo + ' marked as "' + res.status + '" by ' + res.by + '.', true);
     loadRequisitions();
-    viewRequisition(res.reqNo);
-  }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
+    viewRequisition(res.reqNo); // re-renders the panel, replacing these buttons entirely
+  }).catch(err => {
+    showMsg('rq_detailMsg', 'Error: ' + err.message, false);
+    buttons.forEach(b => b.disabled = false);
+    btn.innerHTML = originalLabel;
+  });
 }
 
 function printRequisition() {
