@@ -242,16 +242,17 @@
       </div>
 
       <div class="toolbar">
-        <select id="rq_statusFilter" style="max-width:220px" onchange="renderRequisitionsList()">
-          <option value="All">All statuses</option>
-          <option value="Pending Stage 1 Approval">Pending Stage 1 Approval</option>
-          <option value="Pending Stage 2 Approval">Pending Stage 2 Approval</option>
-          <option value="Approved - Awaiting Issuance">Approved - Awaiting Issuance</option>
-          <option value="Issued">Issued</option>
-          <option value="To Be Revised">To Be Revised</option>
-          <option value="Cancelled">Cancelled</option>
-          <option value="Rejected">Rejected</option>
-        </select>
+       <select id="rq_statusFilter" style="max-width:220px" onchange="renderRequisitionsList()">
+  <option value="Active" selected>Active (hides Issued/Cancelled/Rejected)</option>
+  <option value="All">All statuses</option>
+  <option value="Pending Stage 1 Approval">Pending Stage 1 Approval</option>
+  <option value="Pending Stage 2 Approval">Pending Stage 2 Approval</option>
+  <option value="Approved - Awaiting Issuance">Approved - Awaiting Issuance</option>
+  <option value="Issued">Issued</option>
+  <option value="To Be Revised">To Be Revised</option>
+  <option value="Cancelled">Cancelled</option>
+  <option value="Rejected">Rejected</option>
+</select>
         <button class="secondary" onclick="loadRequisitions()">🔄 Refresh</button>
         <button class="primary" onclick="printSelectedRequisitions()">🖨️ Print Selected (4 per A4 page)</button>
         <span class="muted" id="rq_selectedCount"></span>
