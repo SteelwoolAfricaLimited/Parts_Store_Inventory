@@ -513,7 +513,7 @@ function loadRequisitions() {
 }
 
 function statusBadge(status) {
- const cls = (status === 'Approved - Awaiting Issuance' || status === 'Issued') ? 'ok'
+  const cls = status === 'Approved - Awaiting Issuance' ? 'ok'
     : status === 'Issued' ? 'issued'
     : (status === 'Rejected' || status === 'Cancelled') ? 'reorder'
     : 'pending';
