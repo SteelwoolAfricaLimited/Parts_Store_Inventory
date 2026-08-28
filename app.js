@@ -506,14 +506,14 @@ function submitRequisition() {
 function loadRequisitions() {
   callApi('getRequisitions').then(list => {
     REQUISITIONS = list;
-    const stillApproved = new Set(list.filter(r => r.status === 'Approved').map(r => r.reqNo));
+    const stillApproved = new Set(list.filter(r => r.status === 'Approved - Awaiting Issuance').map(r => r.reqNo));
     Array.from(REQ_SELECTED_FOR_PRINT).forEach(reqNo => { if (!stillApproved.has(reqNo)) REQ_SELECTED_FOR_PRINT.delete(reqNo); });
     renderRequisitionsList();
   }).catch(() => {});
 }
 
 function statusBadge(status) {
-  const cls = status === 'Approved' ? 'ok'
+ const cls = (status === 'Approved - Awaiting Issuance' || status === 'Issued') ? 'ok'
     : status === 'Issued' ? 'issued'
     : (status === 'Rejected' || status === 'Cancelled') ? 'reorder'
     : 'pending';
@@ -598,7 +598,7 @@ function renderRequisitionDetail() {
       '<button class="primary" onclick="doApproveStage2()">✅ Approve (Final)</button> ' +
       '<button class="secondary" onclick="doReject()">✖ Reject</button>' +
       '<p class="stage-note">Stage 2 approvers: Rocky Rohit or Mary Rimui.</p>';
-  } else if (d.header.status === 'Approved') {
+  } else if (d.header.status === 'Approved - Awaiting Issuance') {
     let html =
       '<p class="muted">Stage 1 approved by <b>' + escapeHtml(d.header.stage1ApprovedBy) + '</b>' +
       (d.header.stage1Date ? ' on ' + new Date(d.header.stage1Date).toLocaleString() : '') + '<br>' +
