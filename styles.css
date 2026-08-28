@@ -46,6 +46,7 @@ button.secondary:hover{background:#f0f2f5;}
 .muted{color:var(--muted);font-size:12px;}
 .empty{padding:24px;text-align:center;color:var(--muted);}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;margin-right:6px;vertical-align:-2px;}
+.spin-dark{display:inline-block;width:14px;height:14px;border:2px solid #12345633;border-top-color:var(--navy);border-radius:50%;animation:sp .7s linear infinite;margin-right:6px;vertical-align:-2px;}
 @keyframes sp{to{transform:rotate(360deg);}}
 .datalist-wrap{position:relative;}
 .suggest{position:absolute;z-index:10;background:#fff;border:1px solid var(--border);border-radius:6px;max-height:220px;overflow:auto;width:100%;box-shadow:0 6px 18px rgba(0,0,0,.08);display:none;}
