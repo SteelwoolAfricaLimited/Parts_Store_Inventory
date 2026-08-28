@@ -568,6 +568,7 @@ function viewRequisition(reqNo) {
   callApi('getRequisitionDetail', reqNo).then(detail => {
     CURRENT_REQ_DETAIL = detail;
     renderRequisitionDetail();
+    document.getElementById('rq_detailPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
 }
 
