@@ -29,7 +29,8 @@ let MONTHLY_DATA = null;
 let REQUISITIONS = [];
 let CURRENT_REQ_DETAIL = null;
 let REQ_CART = [];
-let REQ_SELECTED_ITEM = null;
+let REQ_SELECTED_ITEM = null
+let REQ_SELECTED_STOCK = null;
 let REQ_SELECTED_FOR_PRINT = new Set();
 let ACCESS_LISTS = null;
 let CURRENT_USER = null; // { name, role: 'requestor' | 'approver' | 'superuser' | 'store' }
@@ -413,7 +414,7 @@ function renderCatalogue() {
 function filterReqItems() {
   const val = document.getElementById('rq_search').value.trim().toLowerCase();
   const box = document.getElementById('rq_suggest');
-  if (!val) { box.style.display = 'none'; box.innerHTML = ''; REQ_SELECTED_ITEM = null; renderStockInfo(null); return; }
+  if (!val) { box.style.display = 'none'; box.innerHTML = ''; REQ_SELECTED_ITEM = null; REQ_SELECTED_STOCK = null; renderStockInfo(null); return; }
   const matches = ITEMS.filter(i => i.code.toLowerCase().indexOf(val) !== -1 || i.name.toLowerCase().indexOf(val) !== -1).slice(0, 20);
   box.innerHTML = matches.map(i =>
     '<div onclick="pickReqItem(\'' + i.code.replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:8px">' +
@@ -429,11 +430,15 @@ function pickReqItem(code) {
   const item = ITEMS.find(i => i.code === code);
   if (!item) return;
   REQ_SELECTED_ITEM = item;
+  REQ_SELECTED_STOCK = null; // cleared until the fresh fetch below completes
   document.getElementById('rq_search').value = item.code + ' — ' + item.name;
   document.getElementById('rq_bin').value = item.bin || '';
   document.getElementById('rq_suggest').style.display = 'none';
   document.getElementById('rq_stockInfo').innerHTML = '<span class="muted">Checking available stock…</span>';
-  callApi('getItemStock', code).then(stock => renderStockInfo(stock, item.photoUrl)).catch(() => renderStockInfo(null));
+  callApi('getItemStock', code).then(stock => {
+    REQ_SELECTED_STOCK = stock;
+    renderStockInfo(stock, item.photoUrl);
+  }).catch(() => renderStockInfo(null));
 }
 function renderStockInfo(stock, photoUrl) {
   const el = document.getElementById('rq_stockInfo');
@@ -448,6 +453,10 @@ function renderStockInfo(stock, photoUrl) {
 }
 function addReqItem() {
   if (!REQ_SELECTED_ITEM) { showMsg('newReqMsg', 'Search and select a part first.', false); return; }
+  if (REQ_SELECTED_STOCK && (Number(REQ_SELECTED_STOCK.expectedClosing) || 0) <= 0) {
+    showMsg('newReqMsg', '⚠️ "' + REQ_SELECTED_ITEM.name + '" (' + REQ_SELECTED_ITEM.code + ') shows zero stock and cannot be requisitioned. Please have stock levels checked before requesting this item.', false);
+    return;
+  }
   const qty = Number(document.getElementById('rq_qty').value) || 0;
   if (qty <= 0) { showMsg('newReqMsg', 'Enter a quantity greater than 0.', false); return; }
   REQ_CART.push({
