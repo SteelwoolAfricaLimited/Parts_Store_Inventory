@@ -9,6 +9,6 @@ window.APP_CONFIG = {
     requestors: ['Benjamin','Bramwel','David','Dennis','Kevin','Michael Wambua','Mutinda','Mutuku','Paul','Peter','Stephen','Victor','Wafula'],
     stage1Approvers: ['Lee Kariuki','James Kamami','Francis Mutie','Josphat Langat'],
     stage2Approvers: ['Rocky Rohit','Mary Rimui'],
-    storeKeepers: ['Anthony Githuku','Peter Vundi']
+    storeKeepers: ['Anthony Githuku','Peter Vundi','Dennis Nyakundi']
   }
 };
