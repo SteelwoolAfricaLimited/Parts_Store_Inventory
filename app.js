@@ -47,14 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
     rqDateEl.value = todayStr();
     rqDateEl.disabled = true;
   }
-  document.querySelectorAll('nav button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    });
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+
+    if (btn.dataset.tab === 'purchase' && !PURCHASE_HISTORY) {
+      loadPurchaseHistory();
+    }
   });
+});
 
   document.addEventListener('click', e => {
     if (!e.target.closest('.datalist-wrap')) {
@@ -373,6 +377,7 @@ function submitPurchase() {
     showMsg('purchaseMsg', 'Purchase saved. ' + res.reorderCount + ' item(s) currently need re-ordering.', true);
     ['p_code', 'p_qty', 'p_unitCost', 'p_toBin', 'p_supplier', 'p_grn'].forEach(id => document.getElementById(id).value = '');
     load();
+    loadPurchaseHistory();
   }).catch(err => showMsg('purchaseMsg', 'Error: ' + err.message, false));
 }
 
@@ -716,4 +721,37 @@ function printRequisition() {
     w.document.write(html);
     w.document.close();
   }).catch(err => showMsg('rq_detailMsg', 'Error: ' + err.message, false));
+}
+let PURCHASE_HISTORY = null;
+
+function loadPurchaseHistory() {
+  document.getElementById('purHistoryMsg').textContent = 'Loading…';
+  callApi('getPurchaseHistory', 200).then(records => {
+    PURCHASE_HISTORY = records;
+    renderPurchaseHistory();
+    document.getElementById('purHistoryMsg').textContent = '';
+  }).catch(err => {
+    document.getElementById('purHistoryMsg').textContent = 'Error: ' + err.message;
+  });
+}
+
+function renderPurchaseHistory() {
+  if (!PURCHASE_HISTORY) return;
+  const q = document.getElementById('purHistorySearchBox').value.trim().toLowerCase();
+  const list = q
+    ? PURCHASE_HISTORY.filter(r => (r.partName + r.supplier + r.bin + r.grn).toLowerCase().indexOf(q) !== -1)
+    : PURCHASE_HISTORY;
+
+  document.getElementById('purHistoryBody').innerHTML = list.length ? list.map(r =>
+    '<tr><td>' + (r.date ? new Date(r.date).toLocaleDateString() : '—') + '</td>' +
+    '<td>' + escapeHtml(r.partName) + '</td>' +
+    '<td class="num-cell">' + fmt(r.qty) + '</td>' +
+    '<td>' + escapeHtml(r.bin) + '</td>' +
+    '<td>' + escapeHtml(r.supplier) + '</td>' +
+    '<td>' + escapeHtml(r.grn) + '</td></tr>'
+  ).join('') : '<tr><td colspan="6" class="empty">No matches.</td></tr>';
+
+  document.getElementById('purHistoryFooterNote').textContent = q
+    ? (list.length + ' record(s) match "' + document.getElementById('purHistorySearchBox').value + '".')
+    : ('Showing ' + PURCHASE_HISTORY.length + ' most recent purchase record(s).');
 }
