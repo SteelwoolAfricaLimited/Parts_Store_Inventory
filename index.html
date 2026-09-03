@@ -151,6 +151,19 @@
         <input id="p_code" oninput="filterItems('p')" autocomplete="off">
         <div class="suggest" id="p_suggest"></div>
       </div>
+      <div class="card" style="max-width:900px">
+  <h2>Recent Purchase History</h2>
+  <div class="toolbar">
+    <input id="purHistorySearchBox" placeholder="Filter by part name, supplier, bin, or GRN…" oninput="renderPurchaseHistory()">
+    <button class="secondary" onclick="loadPurchaseHistory()">🔄 Refresh</button>
+    <span class="muted" id="purHistoryMsg"></span>
+  </div>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Date</th><th>Part Name</th><th class="num-cell">Qty</th><th>Bin</th><th>Supplier</th><th>GRN No.</th></tr></thead>
+    <tbody id="purHistoryBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+  </table></div>
+  <p class="muted" id="purHistoryFooterNote"></p>
+</div>
       <div class="grid2">
         <div class="field"><label>Date Received</label><input type="date" id="p_date"></div>
         <div class="field"><label>Quantity Received</label><input type="number" id="p_qty" min="0"></div>
