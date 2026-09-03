@@ -29,7 +29,7 @@ let MONTHLY_DATA = null;
 let REQUISITIONS = [];
 let CURRENT_REQ_DETAIL = null;
 let REQ_CART = [];
-let REQ_SELECTED_ITEM = null
+let REQ_SELECTED_ITEM = null;
 let REQ_SELECTED_STOCK = null;
 let REQ_SELECTED_FOR_PRINT = new Set();
 let ACCESS_LISTS = null;
@@ -435,7 +435,7 @@ function pickReqItem(code) {
   const item = ITEMS.find(i => i.code === code);
   if (!item) return;
   REQ_SELECTED_ITEM = item;
-  REQ_SELECTED_STOCK = null; // cleared until the fresh fetch below completes
+  REQ_SELECTED_STOCK = null;
   document.getElementById('rq_search').value = item.code + ' — ' + item.name;
   document.getElementById('rq_bin').value = item.bin || '';
   document.getElementById('rq_suggest').style.display = 'none';
@@ -458,12 +458,21 @@ function renderStockInfo(stock, photoUrl) {
 }
 function addReqItem() {
   if (!REQ_SELECTED_ITEM) { showMsg('newReqMsg', 'Search and select a part first.', false); return; }
-  if (REQ_SELECTED_STOCK && (Number(REQ_SELECTED_STOCK.expectedClosing) || 0) <= 0) {
-    showMsg('newReqMsg', '⚠️ "' + REQ_SELECTED_ITEM.name + '" (' + REQ_SELECTED_ITEM.code + ') shows zero stock and cannot be requisitioned. Please have stock levels checked before requesting this item.', false);
-    return;
-  }
+
   const qty = Number(document.getElementById('rq_qty').value) || 0;
   if (qty <= 0) { showMsg('newReqMsg', 'Enter a quantity greater than 0.', false); return; }
+
+  const available = REQ_SELECTED_STOCK ? Number(REQ_SELECTED_STOCK.expectedClosing) || 0 : null;
+
+  if (available !== null && available <= 0) {
+    showMsg('newReqMsg', REQ_SELECTED_ITEM.name + ' is currently out of stock and cannot be added to this requisition.', false);
+    return;
+  }
+  if (available !== null && qty > available) {
+    showMsg('newReqMsg', 'Only ' + fmt(available) + ' ' + (REQ_SELECTED_STOCK.uom || '') + ' of ' + REQ_SELECTED_ITEM.name + ' available — reduce the quantity to ' + fmt(available) + ' or less.', false);
+    return;
+  }
+
   REQ_CART.push({
     code: REQ_SELECTED_ITEM.code, name: REQ_SELECTED_ITEM.name, uom: REQ_SELECTED_ITEM.uom,
     bin: document.getElementById('rq_bin').value.trim() || REQ_SELECTED_ITEM.bin,
@@ -472,6 +481,7 @@ function addReqItem() {
   document.getElementById('newReqMsg').style.display = 'none';
   ['rq_search', 'rq_qty', 'rq_bin', 'rq_purpose', 'rq_oldPart'].forEach(id => document.getElementById(id).value = '');
   REQ_SELECTED_ITEM = null;
+  REQ_SELECTED_STOCK = null;
   renderStockInfo(null);
   renderReqCart();
 }
