@@ -736,7 +736,7 @@ let PURCHASE_HISTORY = null;
 
 function loadPurchaseHistory() {
   document.getElementById('purHistoryMsg').textContent = 'Loading…';
-  callApi('getPurchaseHistory', 200).then(records => {
+  callApi('getPurchaseHistory', 30).then(records => {
     PURCHASE_HISTORY = records;
     renderPurchaseHistory();
     document.getElementById('purHistoryMsg').textContent = '';
