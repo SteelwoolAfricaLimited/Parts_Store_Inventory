@@ -151,7 +151,17 @@
         <input id="p_code" oninput="filterItems('p')" autocomplete="off">
         <div class="suggest" id="p_suggest"></div>
       </div>
-      <div class="card" style="max-width:900px">
+      <div class="grid2">
+        <div class="field"><label>Date Received</label><input type="date" id="p_date"></div>
+        <div class="field"><label>Quantity Received</label><input type="number" id="p_qty" min="0"></div>
+        <div class="field"><label>Unit Cost</label><input type="number" id="p_unitCost" min="0" step="0.01"></div>
+        <div class="field"><label>To Bin Location</label><input id="p_toBin" placeholder="defaults to item bin"></div>
+        <div class="field"><label>Supplier Name</label><input id="p_supplier"></div>
+        <div class="field"><label>GRN No.</label><input id="p_grn" placeholder="auto-generated if blank"></div>
+      </div>
+      <button class="primary" onclick="submitPurchase()">Save Purchase/Return</button>
+    </div>
+     <div class="card" style="max-width:900px">
   <h2>Recent Purchase History</h2>
   <div class="toolbar">
     <input id="purHistorySearchBox" placeholder="Filter by part name, supplier, bin, or GRN…" oninput="renderPurchaseHistory()">
@@ -164,16 +174,6 @@
   </table></div>
   <p class="muted" id="purHistoryFooterNote"></p>
 </div>
-      <div class="grid2">
-        <div class="field"><label>Date Received</label><input type="date" id="p_date"></div>
-        <div class="field"><label>Quantity Received</label><input type="number" id="p_qty" min="0"></div>
-        <div class="field"><label>Unit Cost</label><input type="number" id="p_unitCost" min="0" step="0.01"></div>
-        <div class="field"><label>To Bin Location</label><input id="p_toBin" placeholder="defaults to item bin"></div>
-        <div class="field"><label>Supplier Name</label><input id="p_supplier"></div>
-        <div class="field"><label>GRN No.</label><input id="p_grn" placeholder="auto-generated if blank"></div>
-      </div>
-      <button class="primary" onclick="submitPurchase()">Save Purchase/Return</button>
-    </div>
   </div>
 
   <!-- ISSUANCE FORM -->
