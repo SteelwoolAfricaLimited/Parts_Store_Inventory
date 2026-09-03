@@ -373,12 +373,25 @@ function submitPurchase() {
     grn: document.getElementById('p_grn').value
   };
   if (!form.code || !form.qty) { showMsg('purchaseMsg', 'Part code and quantity are required.', false); return; }
+
+  const btn = document.getElementById('p_submitBtn');
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.innerHTML = '<span class="spin"></span>Saving…';
+  document.getElementById('purchaseMsg').style.display = 'none';
+
   callApi('addPurchase', form).then(res => {
-    showMsg('purchaseMsg', 'Purchase saved. ' + res.reorderCount + ' item(s) currently need re-ordering.', true);
+    showMsg('purchaseMsg', '✅ Purchase saved successfully. ' + res.reorderCount + ' item(s) currently need re-ordering.', true);
     ['p_code', 'p_qty', 'p_unitCost', 'p_toBin', 'p_supplier', 'p_grn'].forEach(id => document.getElementById(id).value = '');
     load();
     loadPurchaseHistory();
-  }).catch(err => showMsg('purchaseMsg', 'Error: ' + err.message, false));
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+  }).catch(err => {
+    showMsg('purchaseMsg', 'Error: ' + err.message, false);
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+  });
 }
 
 // ================= CATALOGUE =================
